@@ -50,24 +50,61 @@ func TestPoint(t *testing.T) {
 	}
 }
 
-func TestMultipoint(t *testing.T) {
-	invalid := map[error][]byte{
-		ErrInvalidStorage: {
-			0x01, 0x04, 0x00, 0x00, 0x00, 0x00,
-		}, // no payload
-		ErrUnsupportedValue: {
-			0x01, 0x42, 0x00, 0x00, 0x00, 0x00,
-		}, // invalid type
-		ErrInvalidStorage: {
-			0x01, 0x04, 0x00, 0x00, 0x00, 0x00,
-			0x01, 0x00, 0x00, 0x00, // numpoints - 1
-		}, // no points
+func TestMultiPoint(t *testing.T) {
+	invalid := []struct {
+		err error
+		b   []byte
+	}{
+		{
+			// invalid byte order
+			ErrUnsupportedValue,
+			[]byte{
+				0x42, 0x04, 0x00, 0x00, 0x00, 0x00,
+			},
+		},
+		{
+			// invalid type
+			ErrUnsupportedValue, []byte{
+				0x01, 0x42, 0x00, 0x00, 0x00,
+			},
+		},
+		{
+			// no payload
+			ErrInvalidStorage, []byte{
+				0x01, 0x04, 0x00, 0x00, 0x00,
+			},
+		},
+		{
+			// no points
+			ErrInvalidStorage, []byte{
+				0x01, 0x04, 0x00, 0x00, 0x00,
+				0x01, 0x00, 0x00, 0x00, // numpoints - 1
+			},
+		},
+		{
+			// incomplete point
+			ErrInvalidStorage, []byte{
+				0x01, 0x04, 0x00, 0x00, 0x00,
+				0x01, 0x00, 0x00, 0x00, // numpoints - 1
+				0x01, 0x01, 0x00, 0x00, 0x00, // point without payload
+			},
+		},
+		{
+			// element not a point
+			ErrUnsupportedValue, []byte{
+				0x01, 0x04, 0x00, 0x00, 0x00,
+				0x01, 0x00, 0x00, 0x00, // numpoints - 1
+				0x01, 0x02, 0x00, 0x00, 0x00, // invalid element
+				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x24, 0x40,
+				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x44, 0x40,
+			},
+		},
 	}
 
-	for expected, b := range invalid {
+	for _, e := range invalid {
 		mp := MultiPoint{}
-		if err := mp.Scan(b); assert.Error(t, err) {
-			assert.Exactly(t, expected, err, "Expected multipoint <%s> to fail", hex.EncodeToString(b))
+		if err := mp.Scan(e.b); assert.Error(t, err) {
+			assert.Exactly(t, e.err, err, "Expected multipoint <%s> to fail", hex.EncodeToString(e.b))
 		}
 	}
 
@@ -109,4 +146,9 @@ func TestReadPoints(t *testing.T) {
 			assert.Exactly(t, ErrInvalidStorage, err)
 		}
 	}
+}
+
+func TestEqual(t *testing.T) {
+	assert.True(t, Point{10, 10}.Equal(Point{10, 10}))
+	assert.False(t, Point{10, 20}.Equal(Point{20, 10}))
 }

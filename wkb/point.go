@@ -47,10 +47,6 @@ func readMultiPoint(b []byte, dec binary.ByteOrder) ([]byte, MultiPoint, error) 
 		return nil, nil, err
 	}
 
-	if len(b) < (HeaderSize+PointSize)*n {
-		return nil, nil, ErrInvalidStorage
-	}
-
 	mp := make([]Point, n)
 	for i := 0; i < n; i++ {
 		b, dec, err = byteHeader(b, GeomPoint)
