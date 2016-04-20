@@ -27,6 +27,10 @@ func header(src interface{}, tpe Kind) ([]byte, binary.ByteOrder, error) {
 		return nil, nil, ErrInvalidStorage
 	}
 
+	return byteHeader(b, tpe)
+}
+
+func byteHeader(b []byte, tpe Kind) ([]byte, binary.ByteOrder, error) {
 	if len(b) < HeaderSize {
 		return nil, nil, ErrInvalidStorage
 	}

@@ -6,6 +6,10 @@ type Point struct {
 	X, Y float64
 }
 
+func (p Point) Equal(other Point) bool {
+	return p.X == other.X && p.Y == other.Y
+}
+
 func (p *Point) Scan(src interface{}) error {
 	b, dec, err := header(src, GeomPoint)
 	if err != nil {
@@ -38,7 +42,29 @@ func readPoint(b []byte, dec binary.ByteOrder) ([]byte, Point, error) {
 }
 
 func readMultiPoint(b []byte, dec binary.ByteOrder) ([]byte, MultiPoint, error) {
-	return readPoints(b, dec)
+	b, n, err := readCount(b, dec)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	if len(b) < (HeaderSize+PointSize)*n {
+		return nil, nil, ErrInvalidStorage
+	}
+
+	mp := make([]Point, n)
+	for i := 0; i < n; i++ {
+		b, dec, err = byteHeader(b, GeomPoint)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		b, mp[i], err = readPoint(b, dec)
+		if err != nil {
+			return nil, nil, err
+		}
+	}
+
+	return b, mp, nil
 }
 
 func readPoints(b []byte, dec binary.ByteOrder) ([]byte, []Point, error) {
