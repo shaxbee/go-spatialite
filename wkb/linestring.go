@@ -34,6 +34,11 @@ func readMultiLineString(b []byte, dec binary.ByteOrder) ([]byte, MultiLineStrin
 
 	mls := make([]LineString, n)
 	for i := 0; i < n; i++ {
+		b, dec, err = byteHeader(b, GeomLineString)
+		if err != nil {
+			return nil, nil, err
+		}
+
 		b, mls[i], err = readLineString(b, dec)
 		if err != nil {
 			return nil, nil, err
