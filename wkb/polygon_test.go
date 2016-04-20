@@ -6,8 +6,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestPolygon(t *testing.T) {
-	valid := []byte{
+var (
+	rawPolygon = []byte{
 		0x01, 0x03, 0x00, 0x00, 0x00, // header
 		0x01, 0x00, 0x00, 0x00, // numlinearring - 1
 		0x05, 0x00, 0x00, 0x00, // numpoints - 5
@@ -22,17 +22,7 @@ func TestPolygon(t *testing.T) {
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x3e, 0x40, // point 5
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x24, 0x40,
 	}
-
-	p := Polygon{}
-	if err := p.Scan(valid); assert.NoError(t, err) {
-		assert.Equal(t, Polygon{
-			LinearRing{{30, 10}, {40, 40}, {20, 40}, {10, 20}, {30, 10}},
-		}, p)
-	}
-}
-
-func TestMultiPolygon(t *testing.T) {
-	valid := []byte{
+	rawMultiPolygon = []byte{
 		0x01, 0x06, 0x00, 0x00, 0x00, // header
 		0x02, 0x00, 0x00, 0x00, // numpolygon - 2
 		0x01, 0x03, 0x00, 0x00, 0x00, // polygon 1
@@ -60,9 +50,20 @@ func TestMultiPolygon(t *testing.T) {
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x2e, 0x40,
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x14, 0x40,
 	}
+)
 
+func TestPolygon(t *testing.T) {
+	p := Polygon{}
+	if err := p.Scan(rawPolygon); assert.NoError(t, err) {
+		assert.Equal(t, Polygon{
+			LinearRing{{30, 10}, {40, 40}, {20, 40}, {10, 20}, {30, 10}},
+		}, p)
+	}
+}
+
+func TestMultiPolygon(t *testing.T) {
 	mp := MultiPolygon{}
-	if err := mp.Scan(valid); assert.NoError(t, err) {
+	if err := mp.Scan(rawMultiPolygon); assert.NoError(t, err) {
 		assert.Equal(t, MultiPolygon{
 			Polygon{
 				LinearRing{{30, 20}, {45, 40}, {10, 40}, {30, 20}},

@@ -64,6 +64,8 @@ func readGeometry(b []byte) ([]byte, Geometry, error) {
 		return nil, g, err
 	}
 
+	g.Kind = Kind(kind)
+
 	return b, g, nil
 }
 
