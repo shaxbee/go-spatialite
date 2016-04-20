@@ -1,4 +1,4 @@
-package wkg
+package wkb
 
 import (
 	"errors"

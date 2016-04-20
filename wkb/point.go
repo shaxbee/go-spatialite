@@ -27,11 +27,11 @@ func (mp *MultiPoint) Scan(src interface{}) error {
 }
 
 func readPoint(b []byte, dec binary.ByteOrder) ([]byte, Point, error) {
+	p := Point{}
 	if len(b) < PointSize {
-		return nil, nil, ErrInvalidStorage
+		return nil, p, ErrInvalidStorage
 	}
 
-	p := Point{}
 	b, p.X = readFloat64(b, dec)
 	b, p.Y = readFloat64(b, dec)
 	return b, p, nil
