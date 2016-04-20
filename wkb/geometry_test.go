@@ -6,6 +6,20 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var rawGeometryCollection = []byte{
+	0x01, 0x07, 0x00, 0x00, 0x00, // header
+	0x02, 0x00, 0x00, 0x00, // numgeometry - 2
+	0x01, 0x01, 0x00, 0x00, 0x00, // geometry 1 - point
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10, 0x40,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x18, 0x40,
+	0x01, 0x02, 0x00, 0x00, 0x00, // geometry 2 - linestring
+	0x02, 0x00, 0x00, 0x00, // numpoints - 2
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10, 0x40,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x18, 0x40,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x1c, 0x40,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x24, 0x40,
+}
+
 func TestGeometry(t *testing.T) {
 	g := Geometry{}
 	if err := g.Scan(rawPoint); assert.NoError(t, err) {
@@ -65,5 +79,38 @@ func TestGeometry(t *testing.T) {
 				},
 			},
 		}, g)
+	}
+
+	g = Geometry{}
+	if err := g.Scan(rawGeometryCollection); assert.NoError(t, err) {
+		assert.Equal(t, Geometry{
+			Kind: GeomCollection,
+			Value: GeometryCollection{
+				Geometry{
+					Kind:  GeomPoint,
+					Value: Point{4, 6},
+				},
+				Geometry{
+					Kind:  GeomLineString,
+					Value: LineString{{4, 6}, {7, 10}},
+				},
+			},
+		}, g)
+	}
+}
+
+func TestGeometryCollection(t *testing.T) {
+	gc := GeometryCollection{}
+	if err := gc.Scan(rawGeometryCollection); assert.NoError(t, err) {
+		assert.Equal(t, GeometryCollection{
+			Geometry{
+				Kind:  GeomPoint,
+				Value: Point{4, 6},
+			},
+			Geometry{
+				Kind:  GeomLineString,
+				Value: LineString{{4, 6}, {7, 10}},
+			},
+		}, gc)
 	}
 }
