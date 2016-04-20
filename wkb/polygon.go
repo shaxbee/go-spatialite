@@ -50,6 +50,11 @@ func readMultiPolygon(b []byte, dec binary.ByteOrder) ([]byte, MultiPolygon, err
 
 	mp := make([]Polygon, n)
 	for i := 0; i < n; i++ {
+		b, dec, err = byteHeader(b, GeomPolygon)
+		if err != nil {
+			return nil, nil, err
+		}
+
 		b, mp[i], err = readPolygon(b, dec)
 		if err != nil {
 			return nil, nil, err

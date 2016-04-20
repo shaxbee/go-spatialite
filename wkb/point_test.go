@@ -126,11 +126,8 @@ func TestMultiPoint(t *testing.T) {
 	}
 
 	mp := MultiPoint{}
-	if assert.NoError(t, mp.Scan(valid)) && assert.Equal(t, 4, len(mp)) {
-		assert.Equal(t, Point{10, 40}, mp[0])
-		assert.Equal(t, Point{40, 30}, mp[1])
-		assert.Equal(t, Point{20, 20}, mp[2])
-		assert.Equal(t, Point{30, 10}, mp[3])
+	if assert.NoError(t, mp.Scan(valid)) {
+		assert.Equal(t, MultiPoint{{10, 40}, {40, 30}, {20, 20}, {30, 10}}, mp)
 	}
 }
 

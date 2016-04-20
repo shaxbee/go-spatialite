@@ -55,11 +55,7 @@ func TestLineString(t *testing.T) {
 
 	ls := LineString{}
 	if err := ls.Scan(valid); assert.NoError(t, err) {
-		assert.Equal(t, LineString{
-			Point{30, 10},
-			Point{10, 30},
-			Point{40, 40},
-		}, ls)
+		assert.Equal(t, LineString{{30, 10}, {10, 30}, {40, 40}}, ls)
 	}
 }
 
@@ -144,17 +140,8 @@ func TestMultiLineString(t *testing.T) {
 	mls := MultiLineString{}
 	if err := mls.Scan(valid); assert.NoError(t, err) {
 		assert.Equal(t, MultiLineString{
-			LineString{
-				Point{10, 10},
-				Point{20, 20},
-				Point{10, 40},
-			},
-			LineString{
-				Point{40, 40},
-				Point{30, 30},
-				Point{40, 20},
-				Point{30, 10},
-			},
+			LineString{{10, 10}, {20, 20}, {10, 40}},
+			LineString{{40, 40}, {30, 30}, {40, 20}, {30, 10}},
 		}, mls)
 	}
 }
