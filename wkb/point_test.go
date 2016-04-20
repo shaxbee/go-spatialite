@@ -1,6 +1,7 @@
 package wkb
 
 import (
+	"encoding/binary"
 	"encoding/hex"
 	"testing"
 
@@ -93,5 +94,19 @@ func TestMultipoint(t *testing.T) {
 		assert.Equal(t, Point{40, 30}, mp[1])
 		assert.Equal(t, Point{20, 20}, mp[2])
 		assert.Equal(t, Point{30, 10}, mp[3])
+	}
+}
+
+func TestReadPoints(t *testing.T) {
+	invalid := [][]byte{
+		{0x01, 0x00, 0x00},       // numpoints too short
+		{0x01, 0x00, 0x00, 0x00}, // no payload
+	}
+
+	for _, b := range invalid {
+		_, _, err := readPoints(b, binary.LittleEndian)
+		if assert.Error(t, err) {
+			assert.Exactly(t, ErrInvalidStorage, err)
+		}
 	}
 }
