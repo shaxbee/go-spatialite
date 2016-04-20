@@ -30,3 +30,9 @@ func TestHeader(t *testing.T) {
 		assert.Exactly(t, binary.LittleEndian, bo)
 	}
 }
+
+func TestByteOrder(t *testing.T) {
+	assert.Exactly(t, binary.BigEndian, byteOrder(0x00))
+	assert.Exactly(t, binary.LittleEndian, byteOrder(0x01))
+	assert.Nil(t, byteOrder(0x42))
+}
