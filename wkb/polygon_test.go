@@ -1,6 +1,7 @@
 package wkb
 
 import (
+	"encoding/hex"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -53,6 +54,37 @@ var (
 )
 
 func TestPolygon(t *testing.T) {
+	invalid := []struct {
+		err error
+		b   []byte
+	}{
+		// invalid type
+		{
+			ErrUnsupportedValue,
+			[]byte{0x01, 0x42, 0x00, 0x00, 0x00},
+		},
+		// no payload
+		{
+			ErrInvalidStorage,
+			[]byte{0x01, 0x03, 0x00, 0x00, 0x00},
+		},
+		// no elements
+		{
+			ErrInvalidStorage,
+			[]byte{
+				0x01, 0x03, 0x00, 0x00, 0x00, // header
+				0x01, 0x00, 0x00, 0x00, // numlinearring - 1
+			},
+		},
+	}
+
+	for _, e := range invalid {
+		p := Polygon{}
+		if err := p.Scan(e.b); assert.Error(t, err) {
+			assert.Exactly(t, e.err, err)
+		}
+	}
+
 	p := Polygon{}
 	if err := p.Scan(rawPolygon); assert.NoError(t, err) {
 		assert.Equal(t, Polygon{
@@ -62,6 +94,55 @@ func TestPolygon(t *testing.T) {
 }
 
 func TestMultiPolygon(t *testing.T) {
+	invalid := []struct {
+		err error
+		b   []byte
+	}{
+		// invalid type
+		{
+			ErrUnsupportedValue,
+			[]byte{0x01, 0x42, 0x00, 0x00, 0x00},
+		},
+		// no payload
+		{
+			ErrInvalidStorage,
+			[]byte{0x01, 0x06, 0x00, 0x00, 0x00},
+		},
+		// no elements
+		{
+			ErrInvalidStorage,
+			[]byte{
+				0x01, 0x06, 0x00, 0x00, 0x00, // header
+				0x01, 0x00, 0x00, 0x00, // numpolygon - 2
+			},
+		},
+		// invalid element type
+		{
+			ErrUnsupportedValue,
+			[]byte{
+				0x01, 0x06, 0x00, 0x00, 0x00, // header
+				0x01, 0x00, 0x00, 0x00, // numpolygon - 2
+				0x01, 0x42, 0x00, 0x00, 0x00, // polygon 1
+			},
+		},
+		// no element payload
+		{
+			ErrInvalidStorage,
+			[]byte{
+				0x01, 0x06, 0x00, 0x00, 0x00, // header
+				0x02, 0x00, 0x00, 0x00, // numpolygon - 2
+				0x01, 0x03, 0x00, 0x00, 0x00, // polygon 1
+			},
+		},
+	}
+
+	for _, e := range invalid {
+		mp := MultiPolygon{}
+		if err := mp.Scan(e.b); assert.Error(t, err) {
+			assert.Exactly(t, e.err, err, "Expected MultiPolygon <%v> to fail", hex.EncodeToString(e.b))
+		}
+	}
+
 	mp := MultiPolygon{}
 	if err := mp.Scan(rawMultiPolygon); assert.NoError(t, err) {
 		assert.Equal(t, MultiPolygon{

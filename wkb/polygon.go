@@ -23,10 +23,6 @@ func (mp *MultiPolygon) Scan(src interface{}) error {
 }
 
 func readPolygon(b []byte, dec binary.ByteOrder) ([]byte, Polygon, error) {
-	if len(b) < Uint32Size {
-		return nil, nil, ErrInvalidStorage
-	}
-
 	b, n, err := readCount(b, dec)
 	if err != nil {
 		return nil, nil, err
