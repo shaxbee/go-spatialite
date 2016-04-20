@@ -21,7 +21,45 @@ var rawGeometryCollection = []byte{
 }
 
 func TestGeometry(t *testing.T) {
+	invalid := []struct {
+		err error
+		b   []byte
+	}{
+		// empty
+		{
+			ErrInvalidStorage,
+			[]byte{},
+		},
+		// invalid byte order
+		{
+			ErrInvalidStorage,
+			[]byte{0x02, 0x01, 0x00, 0x00, 0x00},
+		},
+		// no payload
+		{
+			ErrInvalidStorage,
+			[]byte{0x01, 0x01, 0x00, 0x00, 0x00},
+		},
+		// invalid type
+		{
+			ErrUnsupportedValue,
+			[]byte{0x01, 0x42, 0x00, 0x00, 0x00},
+		},
+	}
+
+	for _, e := range invalid {
+		g := Geometry{}
+		if err := g.Scan(e.b); assert.Error(t, err) {
+			assert.Exactly(t, e.err, err)
+		}
+	}
+
 	g := Geometry{}
+	if err := g.Scan(""); assert.Error(t, err) {
+		assert.Exactly(t, ErrInvalidStorage, err)
+	}
+
+	g = Geometry{}
 	if err := g.Scan(rawPoint); assert.NoError(t, err) {
 		assert.Equal(t, Geometry{
 			Kind:  GeomPoint,
@@ -100,6 +138,38 @@ func TestGeometry(t *testing.T) {
 }
 
 func TestGeometryCollection(t *testing.T) {
+	invalid := []struct {
+		err error
+		b   []byte
+	}{
+		// invalid type
+		{
+			ErrUnsupportedValue,
+			[]byte{0x01, 0x42, 0x00, 0x00, 0x00},
+		},
+		{
+			// no payload
+			ErrInvalidStorage,
+			[]byte{0x01, 0x07, 0x00, 0x00, 0x00},
+		},
+		// no element payload
+		{
+			ErrInvalidStorage,
+			[]byte{
+				0x01, 0x07, 0x00, 0x00, 0x00, // header
+				0x02, 0x00, 0x00, 0x00, // numgeometry - 2
+				0x01, 0x01, 0x00, 0x00, 0x00, // geometry 1 - point
+			},
+		},
+	}
+
+	for _, e := range invalid {
+		gc := GeometryCollection{}
+		if err := gc.Scan(e.b); assert.Error(t, err) {
+			assert.Exactly(t, e.err, err)
+		}
+	}
+
 	gc := GeometryCollection{}
 	if err := gc.Scan(rawGeometryCollection); assert.NoError(t, err) {
 		assert.Equal(t, GeometryCollection{
