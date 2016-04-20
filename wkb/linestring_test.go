@@ -7,6 +7,41 @@ import (
 )
 
 func TestLineString(t *testing.T) {
+	invalid := []struct {
+		err error
+		b   []byte
+	}{
+		{
+			// invalid type
+			ErrUnsupportedValue,
+			[]byte{
+				0x01, 0x42, 0x00, 0x00, 0x00,
+			},
+		},
+		{
+			// no payload
+			ErrInvalidStorage,
+			[]byte{
+				0x01, 0x02, 0x00, 0x00, 0x00, // header
+			},
+		},
+		{
+			// no points
+			ErrInvalidStorage,
+			[]byte{
+				0x01, 0x02, 0x00, 0x00, 0x00, // header
+				0x01, 0x00, 0x00, 0x00, // numpoints - 1
+			},
+		},
+	}
+
+	for _, e := range invalid {
+		ls := LineString{}
+		if err := ls.Scan(e.b); assert.Error(t, err) {
+			assert.Exactly(t, e.err, err)
+		}
+	}
+
 	valid := []byte{
 		0x01, 0x02, 0x00, 0x00, 0x00, // header
 		0x03, 0x00, 0x00, 0x00, // numpoints - 3
@@ -29,6 +64,60 @@ func TestLineString(t *testing.T) {
 }
 
 func TestMultiLineString(t *testing.T) {
+	invalid := []struct {
+		err error
+		b   []byte
+	}{
+		{
+			// invalid type
+			ErrUnsupportedValue,
+			[]byte{
+				0x01, 0x42, 0x00, 0x00, 0x00,
+			},
+		},
+		{
+			// no payload
+			ErrInvalidStorage,
+			[]byte{
+				0x01, 0x05, 0x00, 0x00, 0x00, // header
+			},
+		},
+		{
+			// no elements
+			ErrInvalidStorage,
+			[]byte{
+				0x01, 0x05, 0x00, 0x00, 0x00, // header
+				0x01, 0x00, 0x00, 0x00, // numlinestring - 1
+			},
+		},
+		{
+			//invalid element type
+			ErrUnsupportedValue,
+			[]byte{
+				0x01, 0x05, 0x00, 0x00, 0x00, // header
+				0x01, 0x00, 0x00, 0x00, // numlinestring - 2
+				0x01, 0x42, 0x00, 0x00, 0x00, // header - invalid type
+				0x00, 0x00, 0x00, 0x00, // numpoints - 0
+			},
+		},
+		{
+			// no payload in element
+			ErrInvalidStorage,
+			[]byte{
+				0x01, 0x05, 0x00, 0x00, 0x00, // header
+				0x01, 0x00, 0x00, 0x00, // numlinestring - 2
+				0x01, 0x02, 0x00, 0x00, 0x00, // header - invalid type
+			},
+		},
+	}
+
+	for _, e := range invalid {
+		mls := MultiLineString{}
+		if err := mls.Scan(e.b); assert.Error(t, err) {
+			assert.Exactly(t, e.err, err)
+		}
+	}
+
 	valid := []byte{
 		0x01, 0x05, 0x00, 0x00, 0x00, // header
 		0x02, 0x00, 0x00, 0x00, // numlinestring - 2

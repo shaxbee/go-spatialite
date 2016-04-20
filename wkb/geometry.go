@@ -40,7 +40,10 @@ func readGeometry(b []byte) ([]byte, Geometry, error) {
 
 	switch kind {
 	case GeomPoint:
-		b, g.Value, err = readPoint(b, dec)
+		if len(b) < PointSize {
+			return nil, g, ErrInvalidStorage
+		}
+		b, g.Value = readPoint(b, dec)
 	case GeomLineString:
 		b, g.Value, err = readLineString(b, dec)
 	case GeomPolygon:

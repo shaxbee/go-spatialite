@@ -16,8 +16,12 @@ func (p *Point) Scan(src interface{}) error {
 		return err
 	}
 
-	_, *p, err = readPoint(b, dec)
-	return err
+	if len(b) < PointSize {
+		return ErrInvalidStorage
+	}
+
+	_, *p = readPoint(b, dec)
+	return nil
 }
 
 func (mp *MultiPoint) Scan(src interface{}) error {
@@ -30,21 +34,21 @@ func (mp *MultiPoint) Scan(src interface{}) error {
 	return err
 }
 
-func readPoint(b []byte, dec binary.ByteOrder) ([]byte, Point, error) {
+func readPoint(b []byte, dec binary.ByteOrder) ([]byte, Point) {
 	p := Point{}
-	if len(b) < PointSize {
-		return nil, p, ErrInvalidStorage
-	}
-
 	b, p.X = readFloat64(b, dec)
 	b, p.Y = readFloat64(b, dec)
-	return b, p, nil
+	return b, p
 }
 
 func readMultiPoint(b []byte, dec binary.ByteOrder) ([]byte, MultiPoint, error) {
 	b, n, err := readCount(b, dec)
 	if err != nil {
 		return nil, nil, err
+	}
+
+	if len(b) < (HeaderSize+PointSize)*n {
+		return nil, nil, ErrInvalidStorage
 	}
 
 	mp := make([]Point, n)
@@ -54,10 +58,7 @@ func readMultiPoint(b []byte, dec binary.ByteOrder) ([]byte, MultiPoint, error) 
 			return nil, nil, err
 		}
 
-		b, mp[i], err = readPoint(b, dec)
-		if err != nil {
-			return nil, nil, err
-		}
+		b, mp[i] = readPoint(b, dec)
 	}
 
 	return b, mp, nil
