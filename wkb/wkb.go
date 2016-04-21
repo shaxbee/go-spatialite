@@ -30,7 +30,7 @@ const (
 	ByteOrderSize = int(unsafe.Sizeof(ByteOrder(0)))
 	GeomTypeSize  = int(unsafe.Sizeof(Kind(0)))
 	HeaderSize    = ByteOrderSize + GeomTypeSize
-	Uint32Size    = int(unsafe.Sizeof(uint32(0)))
+	CountSize     = int(unsafe.Sizeof(uint32(0)))
 	Float64Size   = int(unsafe.Sizeof(float64(0)))
 	PointSize     = int(unsafe.Sizeof(Point{}))
 )

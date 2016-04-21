@@ -68,7 +68,7 @@ func (gc GeometryCollection) Value() (driver.Value, error) {
 }
 
 func ReadGeometryCollection(b []byte) ([]byte, GeometryCollection, error) {
-	if len(b) < HeaderSize+Uint32Size {
+	if len(b) < HeaderSize+CountSize {
 		return nil, nil, ErrInvalidStorage
 	}
 
@@ -91,7 +91,7 @@ func ReadGeometryCollection(b []byte) ([]byte, GeometryCollection, error) {
 }
 
 func (gc GeometryCollection) ByteSize() int {
-	size := HeaderSize + Uint32Size
+	size := HeaderSize + CountSize
 	for _, g := range gc {
 		size += g.ByteSize()
 	}

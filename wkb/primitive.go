@@ -7,7 +7,7 @@ import (
 )
 
 func readUint32(b []byte, dec binary.ByteOrder) ([]byte, uint32) {
-	return b[Uint32Size:], dec.Uint32(b)
+	return b[CountSize:], dec.Uint32(b)
 }
 
 func readCount(b []byte, dec binary.ByteOrder) ([]byte, int) {
@@ -16,7 +16,7 @@ func readCount(b []byte, dec binary.ByteOrder) ([]byte, int) {
 }
 
 func writeCount(buf *bytes.Buffer, n int) {
-	b := [Uint32Size]byte{}
+	b := [CountSize]byte{}
 	binary.LittleEndian.PutUint32(b[:], uint32(n))
 	buf.Write(b[:])
 }

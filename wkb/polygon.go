@@ -28,7 +28,7 @@ func (p Polygon) Value() (driver.Value, error) {
 }
 
 func ReadPolygon(b []byte) ([]byte, Polygon, error) {
-	if len(b) < HeaderSize+Uint32Size {
+	if len(b) < HeaderSize+CountSize {
 		return nil, nil, ErrInvalidStorage
 	}
 
@@ -41,7 +41,7 @@ func ReadPolygon(b []byte) ([]byte, Polygon, error) {
 
 	p := make([]LinearRing, n)
 	for i := 0; i < n; i++ {
-		if len(b) < Uint32Size {
+		if len(b) < CountSize {
 			return nil, nil, ErrInvalidStorage
 		}
 
@@ -55,7 +55,7 @@ func ReadPolygon(b []byte) ([]byte, Polygon, error) {
 }
 
 func (p Polygon) ByteSize() int {
-	size := HeaderSize + Uint32Size
+	size := HeaderSize + CountSize
 	for _, lr := range p {
 		size += lr.byteSize()
 	}
@@ -92,7 +92,7 @@ func (mp MultiPolygon) Value() (driver.Value, error) {
 }
 
 func ReadMultiPolygon(b []byte) ([]byte, MultiPolygon, error) {
-	if len(b) < HeaderSize+Uint32Size {
+	if len(b) < HeaderSize+CountSize {
 		return nil, nil, ErrInvalidStorage
 	}
 
@@ -115,7 +115,7 @@ func ReadMultiPolygon(b []byte) ([]byte, MultiPolygon, error) {
 }
 
 func (mp MultiPolygon) ByteSize() int {
-	size := HeaderSize + Uint32Size
+	size := HeaderSize + CountSize
 	for _, p := range mp {
 		size += p.ByteSize()
 	}

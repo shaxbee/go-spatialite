@@ -83,7 +83,7 @@ func (mp MultiPoint) Value() (driver.Value, error) {
 }
 
 func ReadMultiPoint(b []byte) ([]byte, MultiPoint, error) {
-	if len(b) < HeaderSize+Uint32Size {
+	if len(b) < HeaderSize+CountSize {
 		return nil, nil, ErrInvalidStorage
 	}
 
@@ -140,7 +140,7 @@ func readPoints(b []byte, dec binary.ByteOrder) ([]byte, Points, error) {
 }
 
 func (pts Points) byteSize() int {
-	return Uint32Size + len(pts)*PointSize
+	return CountSize + len(pts)*PointSize
 }
 
 func (pts Points) write(buf *bytes.Buffer) {

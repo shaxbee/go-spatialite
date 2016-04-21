@@ -27,7 +27,7 @@ func (ls LineString) Value() (driver.Value, error) {
 }
 
 func ReadLineString(b []byte) ([]byte, LineString, error) {
-	if len(b) < HeaderSize+Uint32Size {
+	if len(b) < HeaderSize+CountSize {
 		return nil, nil, ErrInvalidStorage
 	}
 
@@ -74,7 +74,7 @@ func (mls MultiLineString) Value() (driver.Value, error) {
 }
 
 func ReadMultiLineString(b []byte) ([]byte, MultiLineString, error) {
-	if len(b) < HeaderSize+Uint32Size {
+	if len(b) < HeaderSize+CountSize {
 		return nil, nil, ErrInvalidStorage
 	}
 
@@ -96,7 +96,7 @@ func ReadMultiLineString(b []byte) ([]byte, MultiLineString, error) {
 }
 
 func (mls MultiLineString) ByteSize() int {
-	size := HeaderSize + Uint32Size
+	size := HeaderSize + CountSize
 	for _, ls := range mls {
 		size += ls.ByteSize()
 	}
