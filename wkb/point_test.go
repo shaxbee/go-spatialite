@@ -14,6 +14,7 @@ var (
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x3e, 0x40,
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x24, 0x40,
 	}
+
 	rawMultiPoint = []byte{
 		0x01, 0x04, 0x00, 0x00, 0x00, // header
 		0x04, 0x00, 0x00, 0x00, // numpoints - 4
@@ -66,6 +67,10 @@ func TestPoint(t *testing.T) {
 	p := Point{}
 	if assert.NoError(t, p.Scan(rawPoint)) {
 		assert.Equal(t, Point{30, 10}, p)
+	}
+
+	if raw, err := p.Value(); assert.NoError(t, err) {
+		assert.Equal(t, rawPoint, raw)
 	}
 }
 
@@ -130,6 +135,10 @@ func TestMultiPoint(t *testing.T) {
 	mp := MultiPoint{}
 	if assert.NoError(t, mp.Scan(rawMultiPoint)) {
 		assert.Equal(t, MultiPoint{{10, 40}, {40, 30}, {20, 20}, {30, 10}}, mp)
+	}
+
+	if raw, err := mp.Value(); assert.NoError(t, err) {
+		assert.Equal(t, rawMultiPoint, raw)
 	}
 }
 

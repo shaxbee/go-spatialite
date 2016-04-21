@@ -1,6 +1,7 @@
 package wkb
 
 import (
+	"bytes"
 	"encoding/binary"
 	"math"
 )
@@ -17,8 +18,20 @@ func readCount(b []byte, dec binary.ByteOrder) ([]byte, int, error) {
 	return b, int(n), nil
 }
 
+func writeCount(buf *bytes.Buffer, n int) {
+	b := [Uint32Size]byte{}
+	binary.LittleEndian.PutUint32(b[:], uint32(n))
+	buf.Write(b[:])
+}
+
 func readFloat64(b []byte, dec binary.ByteOrder) ([]byte, float64) {
 	return b[Float64Size:], math.Float64frombits(dec.Uint64(b))
+}
+
+func writeFloat64(buf *bytes.Buffer, f float64) {
+	b := [Float64Size]byte{}
+	binary.LittleEndian.PutUint64(b[:], math.Float64bits(f))
+	buf.Write(b[:])
 }
 
 func header(src interface{}, tpe Kind) ([]byte, binary.ByteOrder, error) {
@@ -28,6 +41,13 @@ func header(src interface{}, tpe Kind) ([]byte, binary.ByteOrder, error) {
 	}
 
 	return byteHeader(b, tpe)
+}
+
+func writeHeader(buf *bytes.Buffer, tpe Kind) {
+	b := [HeaderSize]byte{}
+	b[0] = LittleEndian
+	binary.LittleEndian.PutUint32(b[ByteOrderSize:], uint32(tpe))
+	buf.Write(b[:])
 }
 
 func byteHeader(b []byte, tpe Kind) ([]byte, binary.ByteOrder, error) {

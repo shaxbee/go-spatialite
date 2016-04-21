@@ -39,9 +39,9 @@ var (
 	ErrUnsupportedValue = errors.New("Unsupported value")
 )
 
-type LineString []Point
+type LineString Points
 type Polygon []LinearRing
-type MultiPoint []Point
+type MultiPoint Points
 type MultiLineString []LineString
 type MultiPolygon []Polygon
 type Geometry struct {
@@ -50,4 +50,5 @@ type Geometry struct {
 }
 type GeometryCollection []Geometry
 
-type LinearRing []Point
+type LinearRing Points
+type Points []Point

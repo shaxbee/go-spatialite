@@ -91,6 +91,10 @@ func TestPolygon(t *testing.T) {
 			LinearRing{{30, 10}, {40, 40}, {20, 40}, {10, 20}, {30, 10}},
 		}, p)
 	}
+
+	if raw, err := p.Value(); assert.NoError(t, err) {
+		assert.Equal(t, rawPolygon, raw)
+	}
 }
 
 func TestMultiPolygon(t *testing.T) {
@@ -155,4 +159,7 @@ func TestMultiPolygon(t *testing.T) {
 		}, mp)
 	}
 
+	if raw, err := mp.Value(); assert.NoError(t, err) {
+		assert.Equal(t, rawMultiPolygon, raw)
+	}
 }

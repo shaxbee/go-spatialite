@@ -1,6 +1,10 @@
 package wkb
 
-import "encoding/binary"
+import (
+	"bytes"
+	"database/sql/driver"
+	"encoding/binary"
+)
 
 type Point struct {
 	X, Y float64
@@ -8,6 +12,12 @@ type Point struct {
 
 func (p Point) Equal(other Point) bool {
 	return p.X == other.X && p.Y == other.Y
+}
+
+func (p Point) Value() (driver.Value, error) {
+	buf := bytes.NewBuffer(make([]byte, 0, p.byteSize()))
+	p.write(buf)
+	return buf.Bytes(), nil
 }
 
 func (p *Point) Scan(src interface{}) error {
@@ -34,11 +44,27 @@ func (mp *MultiPoint) Scan(src interface{}) error {
 	return err
 }
 
+func (mp MultiPoint) Value() (driver.Value, error) {
+	buf := bytes.NewBuffer(make([]byte, 0, mp.byteSize()))
+	mp.write(buf)
+	return buf.Bytes(), nil
+}
+
 func readPoint(b []byte, dec binary.ByteOrder) ([]byte, Point) {
 	p := Point{}
 	b, p.X = readFloat64(b, dec)
 	b, p.Y = readFloat64(b, dec)
 	return b, p
+}
+
+func (p *Point) byteSize() int {
+	return HeaderSize + PointSize
+}
+
+func (p *Point) write(buf *bytes.Buffer) {
+	writeHeader(buf, GeomPoint)
+	writeFloat64(buf, p.X)
+	writeFloat64(buf, p.Y)
 }
 
 func readMultiPoint(b []byte, dec binary.ByteOrder) ([]byte, MultiPoint, error) {
@@ -57,14 +83,25 @@ func readMultiPoint(b []byte, dec binary.ByteOrder) ([]byte, MultiPoint, error) 
 		if err != nil {
 			return nil, nil, err
 		}
-
 		b, mp[i] = readPoint(b, dec)
 	}
 
 	return b, mp, nil
 }
 
-func readPoints(b []byte, dec binary.ByteOrder) ([]byte, []Point, error) {
+func (mp MultiPoint) byteSize() int {
+	return HeaderSize + Uint32Size + len(mp)*(HeaderSize+PointSize)
+}
+
+func (mp MultiPoint) write(buf *bytes.Buffer) {
+	writeHeader(buf, GeomMultiPoint)
+	writeCount(buf, len(mp))
+	for _, p := range mp {
+		p.write(buf)
+	}
+}
+
+func readPoints(b []byte, dec binary.ByteOrder) ([]byte, Points, error) {
 	b, n, err := readCount(b, dec)
 	if err != nil {
 		return nil, nil, err
@@ -76,9 +113,20 @@ func readPoints(b []byte, dec binary.ByteOrder) ([]byte, []Point, error) {
 
 	p := make([]Point, n)
 	for i := 0; i < n; i++ {
-		b, p[i].X = readFloat64(b, dec)
-		b, p[i].Y = readFloat64(b, dec)
+		b, p[i] = readPoint(b, dec)
 	}
 
 	return b, p, nil
+}
+
+func (pts Points) byteSize() int {
+	return Uint32Size + len(pts)*PointSize
+}
+
+func (pts Points) write(buf *bytes.Buffer) {
+	writeCount(buf, len(pts))
+	for _, p := range pts {
+		writeFloat64(buf, p.X)
+		writeFloat64(buf, p.Y)
+	}
 }

@@ -81,6 +81,10 @@ func TestLineString(t *testing.T) {
 	if err := ls.Scan(rawLineString); assert.NoError(t, err) {
 		assert.Equal(t, LineString{{30, 10}, {10, 30}, {40, 40}}, ls)
 	}
+
+	if raw, err := ls.Value(); assert.NoError(t, err) {
+		assert.Equal(t, rawLineString, raw)
+	}
 }
 
 func TestMultiLineString(t *testing.T) {
@@ -144,5 +148,9 @@ func TestMultiLineString(t *testing.T) {
 			LineString{{10, 10}, {20, 20}, {10, 40}},
 			LineString{{40, 40}, {30, 30}, {40, 20}, {30, 10}},
 		}, mls)
+	}
+
+	if raw, err := mls.Value(); assert.NoError(t, err) {
+		assert.Equal(t, rawMultiLineString, raw)
 	}
 }
