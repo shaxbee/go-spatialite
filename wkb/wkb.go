@@ -1,6 +1,7 @@
 package wkb
 
 import (
+	"bytes"
 	"errors"
 	"unsafe"
 )
@@ -39,15 +40,16 @@ var (
 	ErrUnsupportedValue = errors.New("Unsupported value")
 )
 
+type Geometry interface {
+	ByteSize() int
+	Write(*bytes.Buffer)
+}
+
 type LineString Points
 type Polygon []LinearRing
 type MultiPoint Points
 type MultiLineString []LineString
 type MultiPolygon []Polygon
-type Geometry struct {
-	Kind  Kind
-	Value interface{}
-}
 type GeometryCollection []Geometry
 
 type LinearRing Points

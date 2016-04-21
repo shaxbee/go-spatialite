@@ -1,7 +1,6 @@
 package wkb
 
 import (
-	"encoding/binary"
 	"encoding/hex"
 	"testing"
 
@@ -64,6 +63,10 @@ func TestPoint(t *testing.T) {
 		}
 	}
 
+	if err := (&Point{}).Scan(""); assert.Error(t, err) {
+		assert.Exactly(t, ErrInvalidStorage, err)
+	}
+
 	p := Point{}
 	if assert.NoError(t, p.Scan(rawPoint)) {
 		assert.Equal(t, Point{30, 10}, p)
@@ -83,13 +86,15 @@ func TestMultiPoint(t *testing.T) {
 			// invalid byte order
 			ErrUnsupportedValue,
 			[]byte{
-				0x42, 0x04, 0x00, 0x00, 0x00, 0x00,
+				0x42, 0x04, 0x00, 0x00, 0x00,
+				0x00, 0x00, 0x00, 0x00,
 			},
 		},
 		{
 			// invalid type
 			ErrUnsupportedValue, []byte{
 				0x01, 0x42, 0x00, 0x00, 0x00,
+				0x00, 0x00, 0x00, 0x00,
 			},
 		},
 		{
@@ -128,8 +133,12 @@ func TestMultiPoint(t *testing.T) {
 	for _, e := range invalid {
 		mp := MultiPoint{}
 		if err := mp.Scan(e.b); assert.Error(t, err) {
-			assert.Exactly(t, e.err, err, "Expected multipoint <%s> to fail", hex.EncodeToString(e.b))
+			assert.Exactly(t, e.err, err)
 		}
+	}
+
+	if err := (&MultiPoint{}).Scan(""); assert.Error(t, err) {
+		assert.Exactly(t, ErrInvalidStorage, err)
 	}
 
 	mp := MultiPoint{}
@@ -139,20 +148,6 @@ func TestMultiPoint(t *testing.T) {
 
 	if raw, err := mp.Value(); assert.NoError(t, err) {
 		assert.Equal(t, rawMultiPoint, raw)
-	}
-}
-
-func TestReadPoints(t *testing.T) {
-	invalid := [][]byte{
-		{0x01, 0x00, 0x00},       // numpoints too short
-		{0x01, 0x00, 0x00, 0x00}, // no payload
-	}
-
-	for _, b := range invalid {
-		_, _, err := readPoints(b, binary.LittleEndian)
-		if assert.Error(t, err) {
-			assert.Exactly(t, ErrInvalidStorage, err)
-		}
 	}
 }
 

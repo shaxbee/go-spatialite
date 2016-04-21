@@ -15,39 +15,106 @@ func (p Point) Equal(other Point) bool {
 }
 
 func (p Point) Value() (driver.Value, error) {
-	buf := bytes.NewBuffer(make([]byte, 0, p.byteSize()))
-	p.write(buf)
+	buf := bytes.NewBuffer(make([]byte, 0, p.ByteSize()))
+	p.Write(buf)
 	return buf.Bytes(), nil
 }
 
 func (p *Point) Scan(src interface{}) error {
-	b, dec, err := header(src, GeomPoint)
-	if err != nil {
-		return err
-	}
-
-	if len(b) < PointSize {
+	b, ok := src.([]byte)
+	if !ok {
 		return ErrInvalidStorage
 	}
 
-	_, *p = readPoint(b, dec)
-	return nil
-}
-
-func (mp *MultiPoint) Scan(src interface{}) error {
-	b, dec, err := header(src, GeomMultiPoint)
+	_, tmp, err := ReadPoint(b)
 	if err != nil {
 		return err
 	}
 
-	_, *mp, err = readMultiPoint(b, dec)
-	return err
+	*p = tmp
+	return nil
+}
+
+func (p Point) ByteSize() int {
+	return HeaderSize + PointSize
+}
+
+func (p Point) Write(buf *bytes.Buffer) {
+	writeHeader(buf, GeomPoint)
+	writeFloat64(buf, p.X)
+	writeFloat64(buf, p.Y)
+}
+
+func ReadPoint(b []byte) ([]byte, Point, error) {
+	p := Point{}
+	if len(b) < HeaderSize+PointSize {
+		return nil, p, ErrInvalidStorage
+	}
+
+	b, dec, err := header(b, GeomPoint)
+	if err != nil {
+		return nil, p, err
+	}
+
+	b, p.X = readFloat64(b, dec)
+	b, p.Y = readFloat64(b, dec)
+	return b, p, nil
+}
+
+func (mp *MultiPoint) Scan(src interface{}) error {
+	b, ok := src.([]byte)
+	if !ok {
+		return ErrInvalidStorage
+	}
+
+	_, tmp, err := ReadMultiPoint(b)
+	if err != nil {
+		return err
+	}
+
+	*mp = tmp
+	return nil
 }
 
 func (mp MultiPoint) Value() (driver.Value, error) {
-	buf := bytes.NewBuffer(make([]byte, 0, mp.byteSize()))
-	mp.write(buf)
+	buf := bytes.NewBuffer(make([]byte, 0, mp.ByteSize()))
+	mp.Write(buf)
 	return buf.Bytes(), nil
+}
+
+func ReadMultiPoint(b []byte) ([]byte, MultiPoint, error) {
+	if len(b) < HeaderSize+Uint32Size {
+		return nil, nil, ErrInvalidStorage
+	}
+
+	b, dec, err := header(b, GeomMultiPoint)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	b, n := readCount(b, dec)
+
+	mp := make([]Point, n)
+	for i := 0; i < n; i++ {
+		b, mp[i], err = ReadPoint(b)
+		if err != nil {
+			return nil, nil, err
+		}
+	}
+
+	return b, mp, nil
+}
+
+func (mp MultiPoint) ByteSize() int {
+	return HeaderSize + Points(mp).byteSize()
+}
+
+func (mp MultiPoint) Write(buf *bytes.Buffer) {
+	writeHeader(buf, GeomMultiPoint)
+	writeCount(buf, len(mp))
+	for _, p := range mp {
+		p.Write(buf)
+	}
 }
 
 func readPoint(b []byte, dec binary.ByteOrder) ([]byte, Point) {
@@ -57,55 +124,8 @@ func readPoint(b []byte, dec binary.ByteOrder) ([]byte, Point) {
 	return b, p
 }
 
-func (p *Point) byteSize() int {
-	return HeaderSize + PointSize
-}
-
-func (p *Point) write(buf *bytes.Buffer) {
-	writeHeader(buf, GeomPoint)
-	writeFloat64(buf, p.X)
-	writeFloat64(buf, p.Y)
-}
-
-func readMultiPoint(b []byte, dec binary.ByteOrder) ([]byte, MultiPoint, error) {
-	b, n, err := readCount(b, dec)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	if len(b) < (HeaderSize+PointSize)*n {
-		return nil, nil, ErrInvalidStorage
-	}
-
-	mp := make([]Point, n)
-	for i := 0; i < n; i++ {
-		b, dec, err = byteHeader(b, GeomPoint)
-		if err != nil {
-			return nil, nil, err
-		}
-		b, mp[i] = readPoint(b, dec)
-	}
-
-	return b, mp, nil
-}
-
-func (mp MultiPoint) byteSize() int {
-	return HeaderSize + Uint32Size + len(mp)*(HeaderSize+PointSize)
-}
-
-func (mp MultiPoint) write(buf *bytes.Buffer) {
-	writeHeader(buf, GeomMultiPoint)
-	writeCount(buf, len(mp))
-	for _, p := range mp {
-		p.write(buf)
-	}
-}
-
 func readPoints(b []byte, dec binary.ByteOrder) ([]byte, Points, error) {
-	b, n, err := readCount(b, dec)
-	if err != nil {
-		return nil, nil, err
-	}
+	b, n := readCount(b, dec)
 
 	if len(b) < PointSize*n {
 		return nil, nil, ErrInvalidStorage

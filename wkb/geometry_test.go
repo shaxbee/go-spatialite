@@ -48,91 +48,51 @@ func TestGeometry(t *testing.T) {
 	}
 
 	for _, e := range invalid {
-		g := Geometry{}
-		if err := g.Scan(e.b); assert.Error(t, err) {
+		if _, err := New(e.b); assert.Error(t, err) {
 			assert.Exactly(t, e.err, err)
 		}
 	}
 
-	g := Geometry{}
-	if err := g.Scan(""); assert.Error(t, err) {
-		assert.Exactly(t, ErrInvalidStorage, err)
+	if g, err := New(rawPoint); assert.NoError(t, err) {
+		assert.Equal(t, Point{30, 10}, g)
 	}
 
-	g = Geometry{}
-	if err := g.Scan(rawPoint); assert.NoError(t, err) {
-		assert.Equal(t, Geometry{
-			Kind:  GeomPoint,
-			Value: Point{30, 10},
+	if g, err := New(rawMultiPoint); assert.NoError(t, err) {
+		assert.Equal(t, MultiPoint{{10, 40}, {40, 30}, {20, 20}, {30, 10}}, g)
+	}
+
+	if g, err := New(rawLineString); assert.NoError(t, err) {
+		assert.Equal(t, LineString{{30, 10}, {10, 30}, {40, 40}}, g)
+	}
+
+	if g, err := New(rawMultiLineString); assert.NoError(t, err) {
+		assert.Equal(t, MultiLineString{
+			LineString{{10, 10}, {20, 20}, {10, 40}},
+			LineString{{40, 40}, {30, 30}, {40, 20}, {30, 10}},
 		}, g)
 	}
 
-	g = Geometry{}
-	if err := g.Scan(rawMultiPoint); assert.NoError(t, err) {
-		assert.Equal(t, Geometry{
-			Kind:  GeomMultiPoint,
-			Value: MultiPoint{{10, 40}, {40, 30}, {20, 20}, {30, 10}},
+	if g, err := New(rawPolygon); assert.NoError(t, err) {
+		assert.Equal(t, Polygon{
+			LinearRing{{30, 10}, {40, 40}, {20, 40}, {10, 20}, {30, 10}},
 		}, g)
 	}
 
-	g = Geometry{}
-	if err := g.Scan(rawLineString); assert.NoError(t, err) {
-		assert.Equal(t, Geometry{
-			Kind:  GeomLineString,
-			Value: LineString{{30, 10}, {10, 30}, {40, 40}},
-		}, g)
-	}
-
-	g = Geometry{}
-	if err := g.Scan(rawMultiLineString); assert.NoError(t, err) {
-		assert.Equal(t, Geometry{
-			Kind: GeomMultiLineString,
-			Value: MultiLineString{
-				LineString{{10, 10}, {20, 20}, {10, 40}},
-				LineString{{40, 40}, {30, 30}, {40, 20}, {30, 10}},
+	if g, err := New(rawMultiPolygon); assert.NoError(t, err) {
+		assert.Equal(t, MultiPolygon{
+			Polygon{
+				LinearRing{{30, 20}, {45, 40}, {10, 40}, {30, 20}},
+			},
+			Polygon{
+				LinearRing{{15, 5}, {40, 10}, {10, 20}, {5, 10}, {15, 5}},
 			},
 		}, g)
 	}
 
-	g = Geometry{}
-	if err := g.Scan(rawPolygon); assert.NoError(t, err) {
-		assert.Equal(t, Geometry{
-			Kind: GeomPolygon,
-			Value: Polygon{
-				LinearRing{{30, 10}, {40, 40}, {20, 40}, {10, 20}, {30, 10}},
-			},
-		}, g)
-	}
-
-	g = Geometry{}
-	if err := g.Scan(rawMultiPolygon); assert.NoError(t, err) {
-		assert.Equal(t, Geometry{
-			Kind: GeomMultiPolygon,
-			Value: MultiPolygon{
-				Polygon{
-					LinearRing{{30, 20}, {45, 40}, {10, 40}, {30, 20}},
-				},
-				Polygon{
-					LinearRing{{15, 5}, {40, 10}, {10, 20}, {5, 10}, {15, 5}},
-				},
-			},
-		}, g)
-	}
-
-	g = Geometry{}
-	if err := g.Scan(rawGeometryCollection); assert.NoError(t, err) {
-		assert.Equal(t, Geometry{
-			Kind: GeomCollection,
-			Value: GeometryCollection{
-				Geometry{
-					Kind:  GeomPoint,
-					Value: Point{4, 6},
-				},
-				Geometry{
-					Kind:  GeomLineString,
-					Value: LineString{{4, 6}, {7, 10}},
-				},
-			},
+	if g, err := New(rawGeometryCollection); assert.NoError(t, err) {
+		assert.Equal(t, GeometryCollection{
+			Point{4, 6},
+			LineString{{4, 6}, {7, 10}},
 		}, g)
 	}
 }
@@ -145,7 +105,7 @@ func TestGeometryCollection(t *testing.T) {
 		// invalid type
 		{
 			ErrUnsupportedValue,
-			[]byte{0x01, 0x42, 0x00, 0x00, 0x00},
+			[]byte{0x01, 0x42, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
 		},
 		{
 			// no payload
@@ -170,17 +130,19 @@ func TestGeometryCollection(t *testing.T) {
 		}
 	}
 
+	if err := (&GeometryCollection{}).Scan(""); assert.Error(t, err) {
+		assert.Exactly(t, ErrInvalidStorage, err)
+	}
+
 	gc := GeometryCollection{}
 	if err := gc.Scan(rawGeometryCollection); assert.NoError(t, err) {
 		assert.Equal(t, GeometryCollection{
-			Geometry{
-				Kind:  GeomPoint,
-				Value: Point{4, 6},
-			},
-			Geometry{
-				Kind:  GeomLineString,
-				Value: LineString{{4, 6}, {7, 10}},
-			},
+			Point{4, 6},
+			LineString{{4, 6}, {7, 10}},
 		}, gc)
+	}
+
+	if raw, err := gc.Value(); assert.NoError(t, err) {
+		assert.Equal(t, rawGeometryCollection, raw)
 	}
 }

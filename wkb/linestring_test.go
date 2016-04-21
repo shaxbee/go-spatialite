@@ -51,6 +51,7 @@ func TestLineString(t *testing.T) {
 			ErrUnsupportedValue,
 			[]byte{
 				0x01, 0x42, 0x00, 0x00, 0x00,
+				0x00, 0x00, 0x00, 0x00,
 			},
 		},
 		{
@@ -77,6 +78,10 @@ func TestLineString(t *testing.T) {
 		}
 	}
 
+	if err := (&LineString{}).Scan(""); assert.Error(t, err) {
+		assert.Exactly(t, ErrInvalidStorage, err)
+	}
+
 	ls := LineString{}
 	if err := ls.Scan(rawLineString); assert.NoError(t, err) {
 		assert.Equal(t, LineString{{30, 10}, {10, 30}, {40, 40}}, ls)
@@ -97,6 +102,7 @@ func TestMultiLineString(t *testing.T) {
 			ErrUnsupportedValue,
 			[]byte{
 				0x01, 0x42, 0x00, 0x00, 0x00,
+				0x00, 0x00, 0x00, 0x00,
 			},
 		},
 		{
@@ -140,6 +146,10 @@ func TestMultiLineString(t *testing.T) {
 		if err := mls.Scan(e.b); assert.Error(t, err) {
 			assert.Exactly(t, e.err, err)
 		}
+	}
+
+	if err := (&MultiLineString{}).Scan(""); assert.Error(t, err) {
+		assert.Exactly(t, ErrInvalidStorage, err)
 	}
 
 	mls := MultiLineString{}

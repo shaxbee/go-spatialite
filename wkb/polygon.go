@@ -7,54 +7,54 @@ import (
 )
 
 func (p *Polygon) Scan(src interface{}) error {
-	b, dec, err := header(src, GeomPolygon)
+	b, ok := src.([]byte)
+	if !ok {
+		return ErrInvalidStorage
+	}
+
+	_, tmp, err := ReadPolygon(b)
 	if err != nil {
 		return err
 	}
 
-	_, *p, err = readPolygon(b, dec)
+	*p = tmp
 	return err
 }
 
 func (p Polygon) Value() (driver.Value, error) {
-	buf := bytes.NewBuffer(make([]byte, 0, p.byteSize()))
-	p.write(buf)
+	buf := bytes.NewBuffer(make([]byte, 0, p.ByteSize()))
+	p.Write(buf)
 	return buf.Bytes(), nil
 }
 
-func (mp *MultiPolygon) Scan(src interface{}) error {
-	b, dec, err := header(src, GeomMultiPolygon)
-	if err != nil {
-		return err
+func ReadPolygon(b []byte) ([]byte, Polygon, error) {
+	if len(b) < HeaderSize+Uint32Size {
+		return nil, nil, ErrInvalidStorage
 	}
 
-	_, *mp, err = readMultiPolygon(b, dec)
-	return err
-}
-
-func (mp MultiPolygon) Value() (driver.Value, error) {
-	buf := bytes.NewBuffer(make([]byte, 0, mp.byteSize()))
-	mp.write(buf)
-	return buf.Bytes(), nil
-}
-
-func readPolygon(b []byte, dec binary.ByteOrder) ([]byte, Polygon, error) {
-	b, n, err := readCount(b, dec)
+	b, dec, err := header(b, GeomPolygon)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	lr := make([]LinearRing, n)
+	b, n := readCount(b, dec)
+
+	p := make([]LinearRing, n)
 	for i := 0; i < n; i++ {
-		b, lr[i], err = readLinearRing(b, dec)
+		if len(b) < Uint32Size {
+			return nil, nil, ErrInvalidStorage
+		}
+
+		b, p[i], err = readLinearRing(b, dec)
 		if err != nil {
 			return nil, nil, err
 		}
 	}
-	return b, lr, nil
+
+	return b, p, nil
 }
 
-func (p Polygon) byteSize() int {
+func (p Polygon) ByteSize() int {
 	size := HeaderSize + Uint32Size
 	for _, lr := range p {
 		size += lr.byteSize()
@@ -62,7 +62,7 @@ func (p Polygon) byteSize() int {
 	return size
 }
 
-func (p Polygon) write(buf *bytes.Buffer) {
+func (p Polygon) Write(buf *bytes.Buffer) {
 	writeHeader(buf, GeomPolygon)
 	writeCount(buf, len(p))
 	for _, lr := range p {
@@ -70,20 +70,42 @@ func (p Polygon) write(buf *bytes.Buffer) {
 	}
 }
 
-func readMultiPolygon(b []byte, dec binary.ByteOrder) ([]byte, MultiPolygon, error) {
-	b, n, err := readCount(b, dec)
+func (mp *MultiPolygon) Scan(src interface{}) error {
+	b, ok := src.([]byte)
+	if !ok {
+		return ErrInvalidStorage
+	}
+
+	_, tmp, err := ReadMultiPolygon(b)
+	if err != nil {
+		return err
+	}
+
+	*mp = tmp
+	return nil
+}
+
+func (mp MultiPolygon) Value() (driver.Value, error) {
+	buf := bytes.NewBuffer(make([]byte, 0, mp.ByteSize()))
+	mp.Write(buf)
+	return buf.Bytes(), nil
+}
+
+func ReadMultiPolygon(b []byte) ([]byte, MultiPolygon, error) {
+	if len(b) < HeaderSize+Uint32Size {
+		return nil, nil, ErrInvalidStorage
+	}
+
+	b, dec, err := header(b, GeomMultiPolygon)
 	if err != nil {
 		return nil, nil, err
 	}
 
+	b, n := readCount(b, dec)
+
 	mp := make([]Polygon, n)
 	for i := 0; i < n; i++ {
-		b, dec, err = byteHeader(b, GeomPolygon)
-		if err != nil {
-			return nil, nil, err
-		}
-
-		b, mp[i], err = readPolygon(b, dec)
+		b, mp[i], err = ReadPolygon(b)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -92,19 +114,19 @@ func readMultiPolygon(b []byte, dec binary.ByteOrder) ([]byte, MultiPolygon, err
 	return b, mp, nil
 }
 
-func (mp MultiPolygon) byteSize() int {
+func (mp MultiPolygon) ByteSize() int {
 	size := HeaderSize + Uint32Size
 	for _, p := range mp {
-		size += p.byteSize()
+		size += p.ByteSize()
 	}
 	return size
 }
 
-func (mp MultiPolygon) write(buf *bytes.Buffer) {
+func (mp MultiPolygon) Write(buf *bytes.Buffer) {
 	writeHeader(buf, GeomMultiPolygon)
 	writeCount(buf, len(mp))
 	for _, p := range mp {
-		p.write(buf)
+		p.Write(buf)
 	}
 }
 

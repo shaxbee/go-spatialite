@@ -8,13 +8,7 @@ import (
 )
 
 func TestHeader(t *testing.T) {
-	if _, _, err := header("", 0); assert.Error(t, err) {
-		assert.Exactly(t, ErrInvalidStorage, err, "should fail for non-[]byte type")
-	}
-
 	invalid := map[error][]byte{
-		ErrInvalidStorage:   {},
-		ErrInvalidStorage:   {0x01},
 		ErrUnsupportedValue: {0x02, 0x01, 0x00, 0x00, 0x00},
 		ErrUnsupportedValue: {0x01, 0x02, 0x00, 0x00, 0x00},
 	}

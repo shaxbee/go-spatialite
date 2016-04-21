@@ -3,69 +3,91 @@ package wkb
 import (
 	"bytes"
 	"database/sql/driver"
-	"encoding/binary"
 )
 
 func (ls *LineString) Scan(src interface{}) error {
-	b, dec, err := header(src, GeomLineString)
+	b, ok := src.([]byte)
+	if !ok {
+		return ErrInvalidStorage
+	}
+
+	_, tmp, err := ReadLineString(b)
 	if err != nil {
 		return err
 	}
 
-	_, *ls, err = readLineString(b, dec)
-	return err
+	*ls = tmp
+	return nil
 }
 
 func (ls LineString) Value() (driver.Value, error) {
-	buf := bytes.NewBuffer(make([]byte, 0, ls.byteSize()))
-	ls.write(buf)
+	buf := bytes.NewBuffer(make([]byte, 0, ls.ByteSize()))
+	ls.Write(buf)
 	return buf.Bytes(), nil
 }
 
-func (mls *MultiLineString) Scan(src interface{}) error {
-	b, dec, err := header(src, GeomMultiLineString)
-	if err != nil {
-		return err
+func ReadLineString(b []byte) ([]byte, LineString, error) {
+	if len(b) < HeaderSize+Uint32Size {
+		return nil, nil, ErrInvalidStorage
 	}
 
-	_, *mls, err = readMultiLineString(b, dec)
-	return err
-}
-
-func (mls MultiLineString) Value() (driver.Value, error) {
-	buf := bytes.NewBuffer(make([]byte, 0, mls.byteSize()))
-	mls.write(buf)
-	return buf.Bytes(), nil
-}
-
-func readLineString(b []byte, dec binary.ByteOrder) ([]byte, LineString, error) {
-	b, pts, err := readPoints(b, dec)
-	return b, LineString(pts), err
-}
-
-func (ls LineString) byteSize() int {
-	return HeaderSize + Points(ls).byteSize()
-}
-
-func (ls LineString) write(buf *bytes.Buffer) {
-	writeHeader(buf, GeomLineString)
-	Points(ls).write(buf)
-}
-
-func readMultiLineString(b []byte, dec binary.ByteOrder) ([]byte, MultiLineString, error) {
-	b, n, err := readCount(b, dec)
+	b, dec, err := header(b, GeomLineString)
 	if err != nil {
 		return nil, nil, err
 	}
 
+	b, pts, err := readPoints(b, dec)
+	if err != nil {
+		return nil, nil, err
+	}
+	return b, LineString(pts), err
+}
+
+func (ls LineString) ByteSize() int {
+	return HeaderSize + Points(ls).byteSize()
+}
+
+func (ls LineString) Write(buf *bytes.Buffer) {
+	writeHeader(buf, GeomLineString)
+	Points(ls).write(buf)
+}
+
+func (mls *MultiLineString) Scan(src interface{}) error {
+	b, ok := src.([]byte)
+	if !ok {
+		return ErrInvalidStorage
+	}
+
+	_, tmp, err := ReadMultiLineString(b)
+	if err != nil {
+		return err
+	}
+
+	*mls = tmp
+	return nil
+}
+
+func (mls MultiLineString) Value() (driver.Value, error) {
+	buf := bytes.NewBuffer(make([]byte, 0, mls.ByteSize()))
+	mls.Write(buf)
+	return buf.Bytes(), nil
+}
+
+func ReadMultiLineString(b []byte) ([]byte, MultiLineString, error) {
+	if len(b) < HeaderSize+Uint32Size {
+		return nil, nil, ErrInvalidStorage
+	}
+
+	b, dec, err := header(b, GeomMultiLineString)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	b, n := readCount(b, dec)
+
 	mls := make([]LineString, n)
 	for i := 0; i < n; i++ {
-		b, dec, err = byteHeader(b, GeomLineString)
-		if err != nil {
-			return nil, nil, err
-		}
-
-		b, mls[i], err = readLineString(b, dec)
+		b, mls[i], err = ReadLineString(b)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -73,18 +95,18 @@ func readMultiLineString(b []byte, dec binary.ByteOrder) ([]byte, MultiLineStrin
 	return b, mls, err
 }
 
-func (mls MultiLineString) byteSize() int {
+func (mls MultiLineString) ByteSize() int {
 	size := HeaderSize + Uint32Size
 	for _, ls := range mls {
-		size += ls.byteSize()
+		size += ls.ByteSize()
 	}
 	return size
 }
 
-func (mls MultiLineString) write(buf *bytes.Buffer) {
+func (mls MultiLineString) Write(buf *bytes.Buffer) {
 	writeHeader(buf, GeomMultiLineString)
 	writeCount(buf, len(mls))
 	for _, ls := range mls {
-		ls.write(buf)
+		ls.Write(buf)
 	}
 }

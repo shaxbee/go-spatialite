@@ -10,12 +10,9 @@ func readUint32(b []byte, dec binary.ByteOrder) ([]byte, uint32) {
 	return b[Uint32Size:], dec.Uint32(b)
 }
 
-func readCount(b []byte, dec binary.ByteOrder) ([]byte, int, error) {
-	if len(b) < Uint32Size {
-		return nil, 0, ErrInvalidStorage
-	}
+func readCount(b []byte, dec binary.ByteOrder) ([]byte, int) {
 	b, n := readUint32(b, dec)
-	return b, int(n), nil
+	return b, int(n)
 }
 
 func writeCount(buf *bytes.Buffer, n int) {
@@ -34,27 +31,7 @@ func writeFloat64(buf *bytes.Buffer, f float64) {
 	buf.Write(b[:])
 }
 
-func header(src interface{}, tpe Kind) ([]byte, binary.ByteOrder, error) {
-	b, ok := src.([]byte)
-	if !ok {
-		return nil, nil, ErrInvalidStorage
-	}
-
-	return byteHeader(b, tpe)
-}
-
-func writeHeader(buf *bytes.Buffer, tpe Kind) {
-	b := [HeaderSize]byte{}
-	b[0] = LittleEndian
-	binary.LittleEndian.PutUint32(b[ByteOrderSize:], uint32(tpe))
-	buf.Write(b[:])
-}
-
-func byteHeader(b []byte, tpe Kind) ([]byte, binary.ByteOrder, error) {
-	if len(b) < HeaderSize {
-		return nil, nil, ErrInvalidStorage
-	}
-
+func header(b []byte, tpe Kind) ([]byte, binary.ByteOrder, error) {
 	dec := byteOrder(b[0])
 	if dec == nil {
 		return nil, nil, ErrUnsupportedValue
@@ -77,4 +54,11 @@ func byteOrder(b byte) binary.ByteOrder {
 	default:
 		return nil
 	}
+}
+
+func writeHeader(buf *bytes.Buffer, tpe Kind) {
+	b := [HeaderSize]byte{}
+	b[0] = LittleEndian
+	binary.LittleEndian.PutUint32(b[ByteOrderSize:], uint32(tpe))
+	buf.Write(b[:])
 }
