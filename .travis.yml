@@ -17,7 +17,7 @@ addons:
     apt:
         packages:
         - libsqlite3-0
-        - libspatialite7
+        - libspatialite5
 
 before_install:
 - go get -t ./...
