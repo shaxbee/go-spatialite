@@ -8,6 +8,6 @@ import (
 
 func init() {
 	sql.Register("spatialite", &sqlite3.SQLiteDriver{
-		Extensions: []string{"spatialite"},
+		Extensions: []string{"mod_spatialite"},
 	})
 }
