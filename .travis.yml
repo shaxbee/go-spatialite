@@ -13,7 +13,7 @@ go:
 - tip
 
 before_install:
-- go get .
+- go get ./...
 - go get github.com/mattn/goveralls
 - go get github.com/wadey/gocovmerge
 - go get golang.org/x/tools/cmd/cover
