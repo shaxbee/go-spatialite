@@ -12,8 +12,13 @@ go:
 - 1.6
 - tip
 
+addons:
+    apt:
+        packages:
+        - libsqlite3-0
+        - libspatialite7
+
 before_install:
-- apt-get install libsqlite3-0 libspatialite7
 - go get -t ./...
 - go get github.com/mattn/goveralls
 - go get github.com/wadey/gocovmerge
