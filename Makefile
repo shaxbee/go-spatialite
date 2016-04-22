@@ -1,4 +1,4 @@
-BUILDTAGS=-tags "libsqlite3"
+BUILDTAGS=-tags "libsqlite3" -ldflags -linkmode=external
 
 test:
 	go test -v . $(BUILDTAGS)
