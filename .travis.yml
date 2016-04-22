@@ -1,6 +1,7 @@
 language: go
 
-sudo: false
+sudo: true
+dist: trusty
 
 matrix:
   fast_finish: true
@@ -16,7 +17,7 @@ addons:
     apt:
         packages:
         - libsqlite3-0
-        - libspatialite3
+        - libspatialite7
 
 before_install:
 - go get -t ./...
