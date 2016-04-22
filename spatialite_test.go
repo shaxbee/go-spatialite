@@ -31,7 +31,7 @@ func TestPoint(t *testing.T) {
 	assert.NoError(t, err)
 
 	p2 := wkb.Point{}
-	r := db.QueryRow("SELECT AsBinary(loc) AS loc FROM poi WHERE title=?", "foo")
+	r := db.QueryRow("SELECT ST_AsBinary(loc) AS loc FROM poi WHERE title=?", "foo")
 	if err := r.Scan(&p2); assert.NoError(t, err) {
 		assert.Equal(t, p1, p2)
 	}
