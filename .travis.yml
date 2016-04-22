@@ -20,4 +20,6 @@ before_install:
 
 script:
 - make cover
+
+after_success:
 - $HOME/gopath/bin/goveralls -coverprofile merged.cov -service=travis-ci
