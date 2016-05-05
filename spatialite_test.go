@@ -9,25 +9,18 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestCreateTable(t *testing.T) {
-	db, err := sql.Open("spatialite", ":memory:")
-	require.NoError(t, err)
-	defer db.Close()
-
-	_, err = db.Exec("CREATE TABLE poi (title TEXT, loc ST_Point)")
-	assert.NoError(t, err)
-}
-
 func TestPoint(t *testing.T) {
-	db, err := sql.Open("spatialite", ":memory:")
-	require.NoError(t, err)
+	db := makeDB(t)
 	defer db.Close()
 
-	_, err = db.Exec("CREATE TABLE poi (title TEXT, loc ST_Point)")
+	_, err := db.Exec("CREATE TABLE poi(title TEXT)")
+	require.NoError(t, err)
+
+	_, err = db.Exec("SELECT AddGeometryColumn('poi', 'loc', 4326, 'POINT')")
 	require.NoError(t, err)
 
 	p1 := wkb.Point{10, 10}
-	_, err = db.Exec("INSERT INTO poi(title, loc) VALUES (?, ST_PointFromWKB(?))", "foo", p1)
+	_, err = db.Exec("INSERT INTO poi(title, loc) VALUES (?, ST_PointFromWKB(?, 4326))", "foo", p1)
 	assert.NoError(t, err)
 
 	p2 := wkb.Point{}
@@ -35,4 +28,10 @@ func TestPoint(t *testing.T) {
 	if err := r.Scan(&p2); assert.NoError(t, err) {
 		assert.Equal(t, p1, p2)
 	}
+}
+
+func makeDB(t *testing.T) *sql.DB {
+	db, err := sql.Open("spatialite", "file:dummy.db?mode=memory&cache=shared")
+	require.NoError(t, err)
+	return db
 }
