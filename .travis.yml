@@ -1,8 +1,5 @@
 language: go
 
-sudo: true
-dist: trusty
-
 matrix:
   fast_finish: true
   allow_failures:
