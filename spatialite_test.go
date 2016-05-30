@@ -33,5 +33,8 @@ func TestPoint(t *testing.T) {
 func makeDB(t *testing.T) *sql.DB {
 	db, err := sql.Open("spatialite", "file:dummy.db?mode=memory&cache=shared")
 	require.NoError(t, err)
+
+	_, err = db.Exec("SELECT InitSpatialMetadata()")
+	require.NoError(t, err)
 	return db
 }
