@@ -14,10 +14,7 @@ type entrypoint struct {
 
 var LibNames = []entrypoint{
 	{"mod_spatialite", "sqlite3_modspatialite_init"},
-	{"libspatialite7", "sqlite3_spatialite_init"},
-	{"libspatialite5", "sqlite3_spatialite_init"},
-	{"libspatialite3", "sqlite3_spatialite_init"},
-	{"libspatialite", "sqlite3_modspatialite_init"},
+	{"libspatialite.so", "sqlite3_modspatialite_init"},
 }
 
 var ErrSpatialiteNotFound = errors.New("shaxbee/go-spatialite: spatialite extension not found.")
