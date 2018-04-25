@@ -15,6 +15,7 @@ type entrypoint struct {
 var LibNames = []entrypoint{
 	{"mod_spatialite", "sqlite3_modspatialite_init"},
 	{"libspatialite.so", "sqlite3_modspatialite_init"},
+	{"libspatialite.so.5", "spatialite_init_ex"},
 	{"libspatialite.so", "spatialite_init_ex"},
 }
 

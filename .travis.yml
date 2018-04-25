@@ -6,15 +6,16 @@ matrix:
     - go: tip
 
 go:
-- 1.5
-- 1.6
+- "1.8"
+- "1.9"
+- "1.10"
 - tip
 
 addons:
     apt:
         packages:
         - libsqlite3-0
-        - libspatialite3
+        - libspatialite5
 
 before_install:
 - go get -t ./...
